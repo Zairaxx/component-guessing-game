@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>useEffect-gissningen</title>
+<style>
+  :root {
+    --bg: #f4f6fb; --panel: #fff; --ink: #1b1e27; --muted: #646b7a; --line: #dfe3ec;
+    --accent: #087ea4; --ok: #1f8a4c; --bad: #c23b2a; --code-bg: #1e1f24; --code-ink: #e6e6e6;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--ink); line-height: 1.5; }
+  header.app { padding: 20px 24px 8px; max-width: 1400px; margin: 0 auto; }
+  header.app h1 { margin: 0 0 4px; font-size: 1.5rem; }
+  header.app p { margin: 0; color: var(--muted); }
+  main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; padding: 16px 24px 40px; max-width: 1400px; margin: 0 auto; align-items: start; }
+  @media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
+  .panel-huvud { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+  .panel-huvud h2 { margin: 0; font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  #aterstall { font: inherit; font-weight: 700; padding: 10px 18px; border: 0; border-radius: 999px; background: #e8590c; color: #fff; cursor: pointer; box-shadow: 0 2px 0 rgba(0,0,0,.15); }
+  #aterstall:hover { background: #d9480f; }
+  #aterstall:active { transform: translateY(1px); }
+
+  .komponenter { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+  .kort { border: 1px solid var(--line); border-radius: 10px; display: flex; flex-direction: column; overflow: hidden; }
+  .kort.ratt { box-shadow: 0 0 0 2px var(--ok) inset; border-color: var(--ok); }
+  .kort.fel-svar { box-shadow: 0 0 0 2px var(--bad) inset; border-color: var(--bad); }
+  .kort-titel { font-weight: 700; padding: 8px 12px; background: #eef5f8; border-bottom: 1px solid var(--line); }
+  .kort-innehall { padding: 12px; flex: 1; min-height: 130px; overflow-wrap: anywhere; }
+  .kort-innehall p { margin: 0 0 8px; }
+  .kort-innehall ul { margin: 0; padding-left: 18px; }
+  .kort-innehall img { width: 100%; height: 140px; object-fit: cover; border-radius: 6px; display: block; margin-bottom: 8px; }
+  .kort-innehall button { font: inherit; padding: 6px 12px; border-radius: 6px; border: 0; background: var(--accent); color: #fff; cursor: pointer; }
+  .kort-innehall input[type="text"], .kort-innehall input:not([type]) { font: inherit; padding: 6px 8px; width: 100%; border: 1px solid var(--line); border-radius: 6px; margin-bottom: 6px; }
+  .kort-innehall .stor { font-size: 1.8rem; font-weight: 700; margin: 0; }
+  .kort-innehall .fel { color: var(--bad); }
+  .kort-fot { padding: 10px 12px; border-top: 1px solid var(--line); display: flex; gap: 8px; align-items: center; }
+  .kort-fot select { font: inherit; padding: 5px; border-radius: 6px; border: 1px solid var(--line); flex: 1; }
+  .svar { font-size: .85rem; white-space: nowrap; }
+  .svar.ratt { color: var(--ok); } .svar.fel-svar { color: var(--bad); }
+  .krasch { color: var(--bad); font-size: .9rem; }
+
+  .verktyg { display: flex; gap: 12px; align-items: center; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+  #ratta { font: inherit; font-weight: 700; padding: 10px 18px; border-radius: 8px; border: 0; background: var(--ink); color: #fff; cursor: pointer; }
+  #poang { font-weight: 700; }
+
+  .kodlista { display: flex; flex-direction: column; gap: 14px; }
+  .kod h3 { margin: 0 0 4px; font-size: .95rem; }
+  .kod.delad { padding-bottom: 14px; border-bottom: 2px dashed var(--line); }
+  .kort-innehall .status { font-weight: 700; }
+  pre { margin: 0; background: var(--code-bg); color: var(--code-ink); padding: 12px 14px; border-radius: 8px; overflow-x: auto; font: 13px/1.55 ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+  .kw { color: #c792ea; } .str { color: #c3e88d; } .fn { color: #82aaff; } .num { color: #f78c6c; } .tag { color: #f07178; }
+  #laddfel { display: none; max-width: 1400px; margin: 0 auto 10px; padding: 12px 24px; color: var(--bad); }
+</style>
+</head>
+<body>
+
+<header class="app">
+  <h1>useEffect-gissningen</h1>
+  <p>Komponenterna ser nästan likadana ut – men gör olika saker. Testa dem, läs koden A–J och gissa vilken kod som hör till vilken komponent. Klicka sedan på <b>Rätta</b>.</p>
+</header>
+<p id="laddfel">Kunde inte ladda React. Kontrollera internetanslutningen och ladda om sidan.</p>
+
+<main>
+  <section class="panel">
+    <div class="panel-huvud">
+      <h2>Komponenterna</h2>
+      <button id="aterstall" title="Laddar om alla komponenter från början">↺ Återställ komponenterna</button>
+    </div>
+    <div id="root"></div>
+    <div class="verktyg">
+      <button id="ratta">Rätta</button>
+      <span id="poang"></span>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-huvud"><h2>Koden</h2></div>
+    <div class="kodlista" id="kodlista"></div>
+  </section>
+</main>
+
+<!-- ===== Komponenterna som visas och körs ===== -->
+<script type="text/x-komponent" data-id="S">
+function Status({ antal }) {
+  return <p className="status">Antal: {antal}</p>;
+}
+
+function Lista({ personer }) {
+  if (personer.length === 0) {
+    return <p>Listan är tom</p>;
+  }
+
+  return (
+    <ul>
+      {personer.map((p) => (
+        <li key={p.id}>{p.name}</li>
+      ))}
+    </ul>
+  );
+}
+
+function Knapp({ onClick }) {
+  return <button onClick={onClick}>Klicka</button>;
+}
+</script>
+<script type="text/x-komponent" data-id="A">
+function KomponentA() {
+  const [personer, setPersoner] = useState([]);
+  const [antal, setAntal] = useState(3);
+
+  useEffect(() => {
+    fetch("https://jsonplaceholder.typicode.com/users")
+      .then((res) => res.json())
+      .then((data) => setPersoner(data));
+  }, []);
+
+  const synliga = personer.slice(0, antal);
+
+  return (
+    <div>
+      <Status antal={synliga.length} />
+      <Lista personer={synliga} />
+      <Knapp onClick={() => setAntal(antal + 1)} />
+    </div>
+  );
+}
+</script>
+<script type="text/x-komponent" data-id="B">
+function KomponentB() {
+  const [personer, setPersoner] = useState([]);
+  const [antal, setAntal] = useState(3);
+
+  useEffect(() => {
+    fetch(`https://jsonplaceholder.typicode.com/users?_limit=${antal}`)
+      .then((res) => res.json())
+      .then((data) => setPersoner(data));
+  }, [antal]);
+
+  return (
+    <div>
+      <Status antal={personer.length} />
+      <Lista personer={personer} />
+      <Knapp onClick={() => setAntal(antal + 1)} />
+    </div>
+  );
+}
+</script>
+<script type="text/x-komponent" data-id="C">
+function KomponentC() {
+  const [personer, setPersoner] = useState([]);
+  const [laddar, setLaddar] = useState(true);
+
+  useEffect(() => {
+    async function hamta() {
+      const res = await fetch("https://jsonplaceholder.typicode.com/users?_limit=3");
+      const data = await res.json();
+      setPersoner(data);
+      setLaddar(false);
+    }
+    hamta();
+  }, []);
+
+  function hanteraKlick() {
+    setPersoner(personer.filter((p, index) => index !== 0));
+  }
+
+  if (laddar) {
+    return <p>Laddar...</p>;
+  }
+
+  return (
+    <div>
+      <Status antal={personer.length} />
+      <Lista personer={personer} />
+      <Knapp onClick={hanteraKlick} />
+    </div>
+  );
+}
+</script>
+<script type="text/x-komponent" data-id="D">
+function KomponentD() {
+  const [personer, setPersoner] = useState([]);
+
+  useEffect(() => {
+    fetch("https://jsonplaceholder.typicode.com/users?_limit=3")
+      .then((res) => res.json())
+      .then((data) => setPersoner(data));
+  }, []);
+
+  function hanteraKlick() {
+    setPersoner(personer.slice(0, -1));
+  }
+
+  return (
+    <div>
+      <Status antal={personer.length} />
+      <Lista personer={personer} />
+      <Knapp onClick={hanteraKlick} />
+    </div>
+  );
+}
+</script>
+<script type="text/x-komponent" data-id="E">
+function KomponentE() {
+  const [personer, setPersoner] = useState([]);
+
+  useEffect(() => {
+    fetch("https://jsonplaceholder.typicode.com/users?_limit=3")
+      .then((res) => res.json())
+      .then((data) => setPersoner(data));
+  }, []);
+
+  useEffect(() => {
+    document.title = `Antal: ${personer.length}`;
+  }, [personer]);
+
+  function hanteraKlick() {
+    if (personer.length === 0) return;
+    const kopia = { ...personer[0], id: Date.now() };
+    setPersoner([...personer, kopia]);
+  }
+
+  return (
+    <div>
+      <Status antal={personer.length} />
+      <Lista personer={personer} />
+      <Knapp onClick={hanteraKlick} />
+    </div>
+  );
+}
+</script>
+<script type="text/x-komponent" data-id="F">
+function KomponentF() {
+  const [personer, setPersoner] = useState([]);
+
+  useEffect(() => {
+    fetch("https://jsonplaceholder.typicode.com/users?_limit=3")
+      .then((res) => res.json())
+      .then((data) => setPersoner(data));
+  }, []);
+
+  function hanteraKlick() {
+    setPersoner([...personer].reverse());
+  }
+
+  return (
+    <div>
+      <Status antal={personer.length} />
+      <Lista personer={personer} />
+      <Knapp onClick={hanteraKlick} />
+    </div>
+  );
+}
+</script>
+<script type="text/x-komponent" data-id="G">
+function KomponentG() {
+  const [personer, setPersoner] = useState([]);
+  const [visaAlla, setVisaAlla] = useState(false);
+
+  useEffect(() => {
+    fetch("https://jsonplaceholder.typicode.com/users")
+      .then((res) => res.json())
+      .then((data) => setPersoner(data));
+  }, []);
+
+  const synliga = visaAlla ? personer : personer.slice(0, 3);
+
+  return (
+    <div>
+      <Status antal={synliga.length} />
+      <Lista personer={synliga} />
+      <Knapp onClick={() => setVisaAlla(!visaAlla)} />
+    </div>
+  );
+}
+</script>
+<script type="text/x-komponent" data-id="H">
+function KomponentH() {
+  const [personer, setPersoner] = useState([]);
+  const [sida, setSida] = useState(1);
+  const [fel, setFel] = useState(null);
+
+  useEffect(() => {
+    async function hamta() {
+      try {
+        const res = await fetch(`https://jsonplaceholder.typicode.com/users?_page=${sida}&_limit=3`);
+        if (!res.ok) {
+          throw new Error("Status " + res.status);
+        }
+        const data = await res.json();
+        setPersoner(data);
+      } catch (err) {
+        setFel(err.message);
+      }
+    }
+    hamta();
+  }, [sida]);
+
+  if (fel) {
+    return <p>Något gick fel: {fel}</p>;
+  }
+
+  return (
+    <div>
+      <Status antal={personer.length} />
+      <Lista personer={personer} />
+      <Knapp onClick={() => setSida(sida + 1)} />
+    </div>
+  );
+}
+</script>
+<script type="text/x-komponent" data-id="I">
+function KomponentI() {
+  const [personer, setPersoner] = useState([]);
+  const [antal, setAntal] = useState(3);
+  const [aktiv, setAktiv] = useState(false);
+
+  useEffect(() => {
+    fetch("https://jsonplaceholder.typicode.com/users")
+      .then((res) => res.json())
+      .then((data) => setPersoner(data));
+  }, []);
+
+  useEffect(() => {
+    if (!aktiv) return;
+
+    const id = setInterval(() => {
+      setAntal((a) => a + 1);
+    }, 1500);
+
+    return () => clearInterval(id);
+  }, [aktiv]);
+
+  const synliga = personer.slice(0, antal);
+
+  return (
+    <div>
+      <Status antal={synliga.length} />
+      <Lista personer={synliga} />
+      <Knapp onClick={() => setAktiv(!aktiv)} />
+    </div>
+  );
+}
+</script>
+<script type="text/x-komponent" data-id="J">
+function KomponentJ() {
+  const [personer, setPersoner] = useState([]);
+
+  useEffect(() => {
+    fetch("https://jsonplaceholder.typicode.com/users?_limit=3")
+      .then((res) => res.json())
+      .then((data) => setPersoner(data));
+  }, []);
+
+  function hanteraKlick() {
+    personer.shift();
+    setPersoner(personer);
+  }
+
+  return (
+    <div>
+      <Status antal={personer.length} />
+      <Lista personer={personer} />
+      <Knapp onClick={hanteraKlick} />
+    </div>
+  );
+}
+</script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
+
+<script>
+(function () {
+  if (!window.React || !window.ReactDOM || !window.Babel) {
+    document.getElementById("laddfel").style.display = "block";
+    return;
+  }
+
+  // Vilken kod (A–J) varje komponent (1–10) kör
+  const komponentTillKod = ["D", "H", "A", "J", "C", "F", "B", "I", "E", "G"];
+  const ursprungligTitel = document.title;
+
+  const snuttar = {};
+  document.querySelectorAll('script[type="text/x-komponent"]').forEach((s) => {
+    snuttar[s.dataset.id] = s.textContent.replace(/^\n/, "");
+  });
+  const bokstaver = Object.keys(snuttar).filter((b) => b !== "S").sort();
+
+  // --- Visa koden med enkel syntaxfärgning ---
+  function farglagg(kod) {
+    const esc = kod.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return esc.replace(
+      /("(?:[^"\\]|\\.)*"|`(?:[^`\\]|\\.)*`)|\b(function|const|let|if|else|return|async|await|try|catch|throw|new|true|false|null)\b|(&lt;\/?[A-Za-z]+)|\b(\d+)\b|([a-zA-Z_]\w*)(?=\()/g,
+      (m, str, kw, tag, num, fn) => {
+        if (str) return '<span class="str">' + str + "</span>";
+        if (kw) return '<span class="kw">' + kw + "</span>";
+        if (tag) return '<span class="tag">' + tag + "</span>";
+        if (num) return '<span class="num">' + num + "</span>";
+        if (fn) return '<span class="fn">' + fn + "</span>";
+        return m;
+      }
+    );
+  }
+  const kodlista = document.getElementById("kodlista");
+  const delad = document.createElement("div");
+  delad.className = "kod delad";
+  delad.innerHTML = "<h3>Delade komponenter (används av alla)</h3><pre>" + farglagg(snuttar.S) + "</pre>";
+  kodlista.appendChild(delad);
+  bokstaver.forEach((b) => {
+    const wrap = document.createElement("div");
+    wrap.className = "kod";
+    wrap.innerHTML = "<h3>Kod " + b + "</h3><pre>" + farglagg(snuttar[b]) + "</pre>";
+    kodlista.appendChild(wrap);
+  });
+
+  // --- Kompilera och kör exakt samma kod ---
+  const kallkod =
+    "const { useState, useEffect } = React;\n" +
+    snuttar.S + "\n\n" +
+    bokstaver.map((b) => snuttar[b]).join("\n\n") +
+    "\nreturn {" + bokstaver.map((b) => b + ": Komponent" + b).join(", ") + "};";
+  const kompilerad = Babel.transform(kallkod, { presets: ["react"], parserOpts: { allowReturnOutsideFunction: true } }).code;
+  const komponenter = new Function("React", kompilerad)(React);
+
+  const h = React.createElement;
+
+  class Skydd extends React.Component {
+    constructor(p) { super(p); this.state = { fel: false }; }
+    static getDerivedStateFromError() { return { fel: true }; }
+    render() { return this.state.fel ? h("p", { className: "krasch" }, "Komponenten kraschade – se konsolen.") : this.props.children; }
+  }
+
+  function App() {
+    const [omstart, setOmstart] = React.useState(0);
+    const [gissningar, setGissningar] = React.useState(Array(10).fill(""));
+    const [rattat, setRattat] = React.useState(false);
+
+    React.useEffect(() => {
+      const knapp = document.getElementById("aterstall");
+      const aterstall = () => { document.title = ursprungligTitel; setOmstart((n) => n + 1); };
+      const ratta = () => setRattat(true);
+      knapp.addEventListener("click", aterstall);
+      document.getElementById("ratta").addEventListener("click", ratta);
+      return () => {
+        knapp.removeEventListener("click", aterstall);
+        document.getElementById("ratta").removeEventListener("click", ratta);
+      };
+    }, []);
+
+    React.useEffect(() => {
+      const poang = document.getElementById("poang");
+      if (!rattat) { poang.textContent = ""; return; }
+      const antal = gissningar.filter((g, i) => g === komponentTillKod[i]).length;
+      poang.textContent = antal + " / 10 rätt";
+    }, [rattat, gissningar]);
+
+    return h("div", { className: "komponenter" },
+      komponentTillKod.map((bokstav, i) => {
+        const Komp = komponenter[bokstav];
+        const gissning = gissningar[i];
+        const ok = gissning === bokstav;
+        const status = rattat ? (ok ? "ratt" : "fel-svar") : "";
+        return h("div", { className: "kort " + status, key: i },
+          h("div", { className: "kort-titel" }, "Komponent " + (i + 1)),
+          h("div", { className: "kort-innehall" },
+            h(Skydd, { key: omstart }, h(Komp, { key: omstart }))
+          ),
+          h("div", { className: "kort-fot" },
+            h("select", {
+              value: gissning,
+              onChange: (e) => {
+                const nya = gissningar.slice();
+                nya[i] = e.target.value;
+                setGissningar(nya);
+                setRattat(false);
+              }
+            },
+              h("option", { value: "" }, "Din gissning…"),
+              bokstaver.map((b) => h("option", { value: b, key: b }, "Kod " + b))
+            ),
+            rattat && h("span", { className: "svar " + status },
+              ok ? "✓ Rätt!" : (gissning ? "✗ Inte " + gissning : "✗ Ingen gissning"))
+          )
+        );
+      })
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById("root")).render(h(App));
+})();
+</script>
+</body>
+</html>
