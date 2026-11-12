@@ -48,6 +48,10 @@
 
   .kodlista { display: flex; flex-direction: column; gap: 14px; }
   .kod h3 { margin: 0 0 4px; font-size: .95rem; }
+  .ledtrad-knapp { font: inherit; font-size: .85rem; margin-top: 6px; padding: 5px 12px; border-radius: 999px; border: 1px solid #e0b100; background: #fff8db; color: #6b5300; cursor: pointer; }
+  .ledtrad-knapp:hover { background: #fff1b8; }
+  .ledtrad { margin: 8px 0 0; padding: 10px 12px; background: #fff8db; border-left: 4px solid #e0b100; border-radius: 6px; font-size: .92rem; }
+  .ledtrad code { background: rgba(0,0,0,.07); padding: 1px 4px; border-radius: 4px; font-size: .88em; }
   .kod.delad { padding-bottom: 14px; border-bottom: 2px dashed var(--line); }
   .kort-innehall .status { font-weight: 700; }
   pre { margin: 0; background: var(--code-bg); color: var(--code-ink); padding: 12px 14px; border-radius: 8px; overflow-x: auto; font: 13px/1.55 ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
@@ -131,19 +135,22 @@ function KomponentA() {
 <script type="text/x-komponent" data-id="B">
 function KomponentB() {
   const [personer, setPersoner] = useState([]);
-  const [antal, setAntal] = useState(3);
 
   useEffect(() => {
-    fetch(`https://jsonplaceholder.typicode.com/users?_limit=${antal}`)
+    fetch("https://jsonplaceholder.typicode.com/users?_limit=3")
       .then((res) => res.json())
       .then((data) => setPersoner(data));
-  }, [antal]);
+  }, []);
+
+  function hanteraKlick() {
+    setPersoner(personer.filter((p, index) => index !== 0));
+  }
 
   return (
     <div>
       <Status antal={personer.length} />
       <Lista personer={personer} />
-      <Knapp onClick={() => setAntal(antal + 1)} />
+      <Knapp onClick={hanteraKlick} />
     </div>
   );
 }
@@ -151,24 +158,15 @@ function KomponentB() {
 <script type="text/x-komponent" data-id="C">
 function KomponentC() {
   const [personer, setPersoner] = useState([]);
-  const [laddar, setLaddar] = useState(true);
 
   useEffect(() => {
-    async function hamta() {
-      const res = await fetch("https://jsonplaceholder.typicode.com/users?_limit=3");
-      const data = await res.json();
-      setPersoner(data);
-      setLaddar(false);
-    }
-    hamta();
+    fetch("https://jsonplaceholder.typicode.com/users?_limit=3")
+      .then((res) => res.json())
+      .then((data) => setPersoner(data));
   }, []);
 
   function hanteraKlick() {
-    setPersoner(personer.filter((p, index) => index !== 0));
-  }
-
-  if (laddar) {
-    return <p>Laddar...</p>;
+    setPersoner(personer.slice(0, -1));
   }
 
   return (
@@ -191,7 +189,7 @@ function KomponentD() {
   }, []);
 
   function hanteraKlick() {
-    setPersoner(personer.slice(0, -1));
+    setPersoner([...personer].reverse());
   }
 
   return (
@@ -205,58 +203,6 @@ function KomponentD() {
 </script>
 <script type="text/x-komponent" data-id="E">
 function KomponentE() {
-  const [personer, setPersoner] = useState([]);
-
-  useEffect(() => {
-    fetch("https://jsonplaceholder.typicode.com/users?_limit=3")
-      .then((res) => res.json())
-      .then((data) => setPersoner(data));
-  }, []);
-
-  useEffect(() => {
-    document.title = `Antal: ${personer.length}`;
-  }, [personer]);
-
-  function hanteraKlick() {
-    if (personer.length === 0) return;
-    const kopia = { ...personer[0], id: Date.now() };
-    setPersoner([...personer, kopia]);
-  }
-
-  return (
-    <div>
-      <Status antal={personer.length} />
-      <Lista personer={personer} />
-      <Knapp onClick={hanteraKlick} />
-    </div>
-  );
-}
-</script>
-<script type="text/x-komponent" data-id="F">
-function KomponentF() {
-  const [personer, setPersoner] = useState([]);
-
-  useEffect(() => {
-    fetch("https://jsonplaceholder.typicode.com/users?_limit=3")
-      .then((res) => res.json())
-      .then((data) => setPersoner(data));
-  }, []);
-
-  function hanteraKlick() {
-    setPersoner([...personer].reverse());
-  }
-
-  return (
-    <div>
-      <Status antal={personer.length} />
-      <Lista personer={personer} />
-      <Knapp onClick={hanteraKlick} />
-    </div>
-  );
-}
-</script>
-<script type="text/x-komponent" data-id="G">
-function KomponentG() {
   const [personer, setPersoner] = useState([]);
   const [visaAlla, setVisaAlla] = useState(false);
 
@@ -277,31 +223,63 @@ function KomponentG() {
   );
 }
 </script>
+<script type="text/x-komponent" data-id="F">
+function KomponentF() {
+  const [personer, setPersoner] = useState([]);
+
+  useEffect(() => {
+    fetch("https://jsonplaceholder.typicode.com/users?_limit=3")
+      .then((res) => res.json())
+      .then((data) => setPersoner(data));
+  }, []);
+
+  function hanteraKlick() {
+    setPersoner([]);
+  }
+
+  return (
+    <div>
+      <Status antal={personer.length} />
+      <Lista personer={personer} />
+      <Knapp onClick={hanteraKlick} />
+    </div>
+  );
+}
+</script>
+<script type="text/x-komponent" data-id="G">
+function KomponentG() {
+  const [personer, setPersoner] = useState([]);
+
+  useEffect(() => {
+    fetch("https://jsonplaceholder.typicode.com/users?_limit=3")
+      .then((res) => res.json())
+      .then((data) => setPersoner(data));
+  }, []);
+
+  function hanteraKlick() {
+    const ny = { id: Date.now(), name: "Ny person" };
+    setPersoner([...personer, ny]);
+  }
+
+  return (
+    <div>
+      <Status antal={personer.length} />
+      <Lista personer={personer} />
+      <Knapp onClick={hanteraKlick} />
+    </div>
+  );
+}
+</script>
 <script type="text/x-komponent" data-id="H">
 function KomponentH() {
   const [personer, setPersoner] = useState([]);
   const [sida, setSida] = useState(1);
-  const [fel, setFel] = useState(null);
 
   useEffect(() => {
-    async function hamta() {
-      try {
-        const res = await fetch(`https://jsonplaceholder.typicode.com/users?_page=${sida}&_limit=3`);
-        if (!res.ok) {
-          throw new Error("Status " + res.status);
-        }
-        const data = await res.json();
-        setPersoner(data);
-      } catch (err) {
-        setFel(err.message);
-      }
-    }
-    hamta();
+    fetch(`https://jsonplaceholder.typicode.com/users?_page=${sida}&_limit=3`)
+      .then((res) => res.json())
+      .then((data) => setPersoner(data));
   }, [sida]);
-
-  if (fel) {
-    return <p>Något gick fel: {fel}</p>;
-  }
 
   return (
     <div>
@@ -315,32 +293,23 @@ function KomponentH() {
 <script type="text/x-komponent" data-id="I">
 function KomponentI() {
   const [personer, setPersoner] = useState([]);
-  const [antal, setAntal] = useState(3);
-  const [aktiv, setAktiv] = useState(false);
+  const [klick, setKlick] = useState(0);
 
   useEffect(() => {
-    fetch("https://jsonplaceholder.typicode.com/users")
+    fetch("https://jsonplaceholder.typicode.com/users?_limit=3")
       .then((res) => res.json())
       .then((data) => setPersoner(data));
   }, []);
 
   useEffect(() => {
-    if (!aktiv) return;
-
-    const id = setInterval(() => {
-      setAntal((a) => a + 1);
-    }, 1500);
-
-    return () => clearInterval(id);
-  }, [aktiv]);
-
-  const synliga = personer.slice(0, antal);
+    document.title = `Du har klickat ${klick} gånger`;
+  }, [klick]);
 
   return (
     <div>
-      <Status antal={synliga.length} />
-      <Lista personer={synliga} />
-      <Knapp onClick={() => setAktiv(!aktiv)} />
+      <Status antal={personer.length} />
+      <Lista personer={personer} />
+      <Knapp onClick={() => setKlick(klick + 1)} />
     </div>
   );
 }
@@ -356,8 +325,11 @@ function KomponentJ() {
   }, []);
 
   function hanteraKlick() {
-    personer.shift();
-    setPersoner(personer);
+    const id = Math.floor(Math.random() * 10) + 1;
+
+    fetch(`https://jsonplaceholder.typicode.com/users/${id}`)
+      .then((res) => res.json())
+      .then((data) => setPersoner([data]));
   }
 
   return (
@@ -410,10 +382,33 @@ function KomponentJ() {
   delad.className = "kod delad";
   delad.innerHTML = "<h3>Delade komponenter (används av alla)</h3><pre>" + farglagg(snuttar.S) + "</pre>";
   kodlista.appendChild(delad);
+  const ledtradar = {
+    A: "Variabeln <code>antal</code> ökar när du klickar. Vad gör <code>slice(0, antal)</code> med listan?",
+    B: "Vilken person har <code>index</code> 0? Det är den som inte får vara kvar.",
+    C: "Testa i konsolen: <code>[1, 2, 3].slice(0, -1)</code>. Vad blir kvar?",
+    D: "Vad gör <code>.reverse()</code> med en array?",
+    E: "<code>visaAlla</code> är antingen <code>true</code> eller <code>false</code>. Hur många personer visas i de två lägena?",
+    F: "Vad innehåller en tom array <code>[]</code>? Och vad visar <code>Lista</code> när den får en tom array?",
+    G: "<code>...personer</code> betyder \"alla som redan finns\". Vem läggs till efter dem?",
+    H: "När <code>sida</code> ändras körs useEffect igen och hämtar nya personer. Byts listan ut, eller växer den?",
+    I: "Listan ändras aldrig här. Titta på flikens namn högst upp i webbläsaren!",
+    J: "Här görs fetch direkt när du klickar, inte i useEffect. Vad gör <code>Math.random()</code>, och hur många personer hamnar i listan?"
+  };
+
+
   bokstaver.forEach((b) => {
     const wrap = document.createElement("div");
     wrap.className = "kod";
-    wrap.innerHTML = "<h3>Kod " + b + "</h3><pre>" + farglagg(snuttar[b]) + "</pre>";
+    wrap.innerHTML =
+      "<h3>Kod " + b + "</h3><pre>" + farglagg(snuttar[b]) + "</pre>" +
+      '<button class="ledtrad-knapp" type="button">💡 Visa ledtråd</button>' +
+      '<p class="ledtrad" hidden>' + ledtradar[b] + "</p>";
+    const knapp = wrap.querySelector(".ledtrad-knapp");
+    const text = wrap.querySelector(".ledtrad");
+    knapp.addEventListener("click", () => {
+      text.hidden = !text.hidden;
+      knapp.textContent = text.hidden ? "💡 Visa ledtråd" : "💡 Dölj ledtråd";
+    });
     kodlista.appendChild(wrap);
   });
 
